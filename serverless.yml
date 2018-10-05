@@ -32,6 +32,8 @@ custom:
   dynamodb:
     start:
       port: 8000
+  defaultStage: v1
+  defaultRegion: ap-northeast-1
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -40,9 +42,9 @@ custom:
 provider:
   name: aws
   runtime: python3.6
-  stage: dev
-  region: ap-northeast-1
-  profile: serverless-ultimu
+  stage: ${opt:stage, self:custom.defaultStage}
+  region: ${opt:region, self:custom.defaultRegion}
+  profile: serverless
   iamRoleStatements:
     - Effect: Allow
       Action:
