@@ -14,8 +14,8 @@
 service: serverless-flask # NOTE: update this with your service name
 
 plugins:
-  - serverless-python-requirements
   - serverless-wsgi
+  - serverless-python-requirements
   - serverless-dynamodb-local
   - serverless-offline
 
@@ -32,8 +32,9 @@ custom:
   dynamodb:
     start:
       port: 8000
-  defaultStage: v1
+  defaultStage: dev
   defaultRegion: ap-northeast-1
+  defaultProfile: serverless
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
@@ -44,7 +45,7 @@ provider:
   runtime: python3.6
   stage: ${opt:stage, self:custom.defaultStage}
   region: ${opt:region, self:custom.defaultRegion}
-  profile: serverless
+  profile: ${opt:profile, self:custom.defaultProfile}
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -56,6 +57,12 @@ provider:
         - dynamodb:DeleteItem
       Resource:
         - { "Fn::GetAtt": ["UsersDynamoDBTable", "Arn" ] }
+    - Effect: Allow
+      Action:
+        - sqs:SendMessage
+        - sqs:GetQueueUrl
+      Resource:
+        - { "Fn::GetAtt": ["SampleQueue", "Arn" ] }
   environment:
     USERS_TABLE: ${self:custom.db.users}
     S3_BUCKET_NAME: ${file(./env/${self:provider.stage}.yml):S3_BUCKET_NAME}
@@ -102,6 +109,14 @@ functions:
     events:
       - http: ANY /
       - http: 'ANY {proxy+}'
+  sqs:
+    handler: sqs.handler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - SampleQueue
+              - Arn
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
@@ -151,6 +166,10 @@ functions:
 
 resources:
   Resources:
+    SampleQueue:
+      Type: "AWS::SQS::Queue"
+      Properties:
+        QueueName: "SampleQueue"
     S3BucketToDashboard:
       Type: AWS::S3::Bucket
       Properties:
