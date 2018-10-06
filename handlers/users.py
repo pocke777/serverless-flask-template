@@ -27,9 +27,13 @@ else:
 def index():
     return "Users Index"
 
-@app.route("/users/<id>")
+@app.route("/api/v1/users/<id>")
 def show(id):
-    return "Users Show"
+    res = dynamodb.get_item(
+        TableName=USERS_TABLE,
+        Key={ "userId": { "S": id } }
+    )
+    return jsonify({ 'result': res })
 
 @app.route("/api/v1/users", methods=["POST"])
 def create():
