@@ -23,7 +23,7 @@ else:
 
 
 
-@app.route("/users")
+@app.route("/api/v1/users")
 def index():
     return "Users Index"
 
@@ -31,7 +31,7 @@ def index():
 def show(id):
     return "Users Show"
 
-@app.route("/users", methods=["POST"])
+@app.route("/api/v1/users", methods=["POST"])
 def create():
 
     id = uuid.uuid1().hex

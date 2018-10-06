@@ -19,22 +19,23 @@ app.register_blueprint(users.app)
 
 s3 = boto3.resource('s3')
 S3_BUCKET_NAME = os.environ['S3_BUCKET_NAME']
+SQS_QUEUE_NAME = os.environ['SQS_QUEUE_NAME']
 
-@app.route("/")
+@app.route("/api/v1")
 def hello():
   return "Hello World!"
 
 
-@app.route("/sqs/send")
+@app.route("/api/v1/sqs/send")
 def sender():
     sqs = boto3.resource('sqs')
-    queue = sqs.get_queue_by_name(QueueName='SampleQueue')
+    queue = sqs.get_queue_by_name(QueueName=SQS_QUEUE_NAME)
     response = queue.send_message(MessageBody='create')
     print(response)
 
     return jsonify(response)
 
-@app.route("/audio")
+@app.route("/api/v1/audio")
 def audio():
     id = uuid.uuid1().hex
     res = sp.call([
@@ -49,4 +50,3 @@ def audio():
     s3.Bucket(S3_BUCKET_NAME).upload_file('/tmp/out.mp3', 'audio/%s/%s%s'%(id, uuid.uuid1(), '.mp3'))
 
     return "ok"
-

@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: serverless-flask # NOTE: update this with your service name
+service: 'serverless-flask-${self:provider.stage}'
 
 plugins:
   - serverless-wsgi
@@ -41,6 +41,11 @@ custom:
 # frameworkVersion: "=X.X.X"
 
 provider:
+  environment:
+    USERS_TABLE: ${self:custom.db.users}
+    S3_BUCKET_NAME: ${file(./env/${self:provider.stage}.yml):S3_BUCKET_NAME}
+    SQS_QUEUE_NAME: ${file(./env/${self:provider.stage}.yml):SQS_QUEUE_NAME}
+    ACCOUNT_ID: ${file(./env/${self:provider.stage}.yml):ACCOUNT_ID}
   name: aws
   runtime: python3.6
   stage: ${opt:stage, self:custom.defaultStage}
@@ -61,12 +66,7 @@ provider:
       Action:
         - sqs:SendMessage
         - sqs:GetQueueUrl
-      Resource:
-        - { "Fn::GetAtt": ["SampleQueue", "Arn" ] }
-  environment:
-    USERS_TABLE: ${self:custom.db.users}
-    S3_BUCKET_NAME: ${file(./env/${self:provider.stage}.yml):S3_BUCKET_NAME}
-
+      Resource: "arn:aws:sqs::${self:provider.region}::${self:provider.environment.ACCOUNT_ID}::${self:provider.environment.SQS_QUEUE_NAME}"
 # you can add statements to the Lambda function's IAM Role here
 #  iamRoleStatements:
 #    - Effect: "Allow"
@@ -112,11 +112,7 @@ functions:
   sqs:
     handler: sqs.handler
     events:
-      - sqs:
-          arn:
-            Fn::GetAtt:
-              - SampleQueue
-              - Arn
+      - sqs: "arn:aws:sqs:${self:provider.region}:${self:provider.environment.ACCOUNT_ID}:${self:provider.environment.SQS_QUEUE_NAME}"
 
 #    The following are a few example events you can configure
 #    NOTE: Please make sure to change your handler code to work with those events
@@ -169,7 +165,7 @@ resources:
     SampleQueue:
       Type: "AWS::SQS::Queue"
       Properties:
-        QueueName: "SampleQueue"
+        QueueName: ${self:provider.environment.SQS_QUEUE_NAME}
     S3BucketToDashboard:
       Type: AWS::S3::Bucket
       Properties:
